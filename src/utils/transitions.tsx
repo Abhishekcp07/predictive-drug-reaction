@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 // Transition duration in milliseconds
@@ -33,12 +33,14 @@ export const usePageTransition = () => {
   };
 };
 
-export const PageTransition = ({ 
+interface PageTransitionProps {
+  children: React.ReactNode;
+  isTransitioning: boolean;
+}
+
+export const PageTransition: React.FC<PageTransitionProps> = ({ 
   children, 
   isTransitioning 
-}: { 
-  children: React.ReactNode; 
-  isTransitioning: boolean;
 }) => {
   return (
     <div
