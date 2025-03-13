@@ -3,6 +3,8 @@ export interface Variant {
   id: string;
   name: string;
   description: string;
+  metabolismImpact?: "normal" | "intermediate" | "poor";
+  sensitivityRisk?: string;
 }
 
 export interface Disease {
@@ -15,6 +17,9 @@ export interface Drug {
   id: string;
   name: string;
   description: string;
+  relatedDiseases: string[];
+  contraindicatedVariants?: string[];
+  metabolizedBy?: string[];
 }
 
 export interface Patient {
@@ -43,6 +48,19 @@ export interface AlternativeDrug {
   description: string;
 }
 
+export interface DosageRecommendation {
+  standard: number;
+  recommended: number;
+  unit: string;
+  adjustmentReason?: string;
+}
+
+export interface Warning {
+  type: "critical" | "moderate" | "mild";
+  message: string;
+  explanation: string;
+}
+
 export interface PredictionResponse {
   id: string;
   patientId: string;
@@ -57,15 +75,24 @@ export interface PredictionResponse {
   alternatives: AlternativeDrug[];
   timestamp: Date;
   details: string;
+  dosageRecommendation?: DosageRecommendation;
+  warnings?: Warning[];
+  metabolismImpact?: string;
+  contraindications?: string[];
 }
 
 // Mock genetic variants
 export const variants: Variant[] = [
-  { id: "var1", name: "CYP2D6*1", description: "Normal metabolizer" },
-  { id: "var2", name: "CYP2C9*2", description: "Intermediate metabolizer" },
-  { id: "var3", name: "CYP2C19*2", description: "Poor metabolizer" },
-  { id: "var4", name: "VKORC1-1639G>A", description: "Warfarin sensitivity" },
-  { id: "var5", name: "HLA-B*5701", description: "Abacavir hypersensitivity" },
+  { id: "var1", name: "CYP2D6*1", description: "Normal metabolizer", metabolismImpact: "normal" },
+  { id: "var2", name: "CYP2C9*2", description: "Intermediate metabolizer", metabolismImpact: "intermediate" },
+  { id: "var3", name: "CYP2C19*2", description: "Poor metabolizer", metabolismImpact: "poor" },
+  { id: "var4", name: "VKORC1-1639G>A", description: "Warfarin sensitivity", sensitivityRisk: "warfarin" },
+  { id: "var5", name: "HLA-B*5701", description: "Abacavir hypersensitivity", sensitivityRisk: "abacavir" },
+  { id: "var6", name: "CYP3A5*3", description: "Poor metabolizer", metabolismImpact: "poor" },
+  { id: "var7", name: "CYP2C9*3", description: "Poor metabolizer", metabolismImpact: "poor" },
+  { id: "var8", name: "DPYD*2A", description: "Dihydropyrimidine dehydrogenase deficiency (5-FU toxicity risk)", sensitivityRisk: "5-fluorouracil" },
+  { id: "var9", name: "TPMT*3A", description: "Thiopurine methyltransferase deficiency (Azathioprine/6-MP toxicity)", sensitivityRisk: "thiopurines" },
+  { id: "var10", name: "SLCO1B1*5", description: "Statin-induced myopathy risk", sensitivityRisk: "statins" }
 ];
 
 // Mock diseases
@@ -75,20 +102,30 @@ export const diseases: Disease[] = [
   { id: "dis3", name: "Depression", description: "Major depressive disorder" },
   { id: "dis4", name: "Asthma", description: "Chronic lung condition" },
   { id: "dis5", name: "Epilepsy", description: "Seizure disorder" },
+  { id: "dis6", name: "Rheumatoid Arthritis", description: "Autoimmune joint inflammation" },
+  { id: "dis7", name: "Cardiovascular Disease", description: "Increased heart disease risk" },
+  { id: "dis8", name: "Schizophrenia", description: "Chronic psychiatric disorder" },
+  { id: "dis9", name: "Parkinson's Disease", description: "Neurodegenerative disorder" },
+  { id: "dis10", name: "Gout", description: "Uric acid buildup causing joint inflammation" }
 ];
 
 // Mock drugs
 export const drugs: Drug[] = [
-  { id: "drug1", name: "Metoprolol", description: "Beta-blocker for hypertension" },
-  { id: "drug2", name: "Metformin", description: "First-line medication for type 2 diabetes" },
-  { id: "drug3", name: "Sertraline", description: "SSRI for depression" },
-  { id: "drug4", name: "Albuterol", description: "Bronchodilator for asthma" },
-  { id: "drug5", name: "Lamotrigine", description: "Anticonvulsant for epilepsy" },
-  { id: "drug6", name: "Lisinopril", description: "ACE inhibitor for hypertension" },
-  { id: "drug7", name: "Gliclazide", description: "Sulfonylurea for type 2 diabetes" },
-  { id: "drug8", name: "Fluoxetine", description: "SSRI for depression" },
-  { id: "drug9", name: "Montelukast", description: "Leukotriene modifier for asthma" },
-  { id: "drug10", name: "Levetiracetam", description: "Anticonvulsant for epilepsy" },
+  { id: "drug1", name: "Metoprolol", description: "Beta-blocker for hypertension", relatedDiseases: ["dis1", "dis7"], metabolizedBy: ["var1"] },
+  { id: "drug2", name: "Metformin", description: "First-line medication for type 2 diabetes", relatedDiseases: ["dis2"] },
+  { id: "drug3", name: "Sertraline", description: "SSRI for depression", relatedDiseases: ["dis3"], metabolizedBy: ["var1", "var3"] },
+  { id: "drug4", name: "Albuterol", description: "Bronchodilator for asthma", relatedDiseases: ["dis4"] },
+  { id: "drug5", name: "Lamotrigine", description: "Anticonvulsant for epilepsy", relatedDiseases: ["dis5"] },
+  { id: "drug6", name: "Lisinopril", description: "ACE inhibitor for hypertension", relatedDiseases: ["dis1", "dis7"] },
+  { id: "drug7", name: "Gliclazide", description: "Sulfonylurea for type 2 diabetes", relatedDiseases: ["dis2"], metabolizedBy: ["var2", "var7"] },
+  { id: "drug8", name: "Fluoxetine", description: "SSRI for depression", relatedDiseases: ["dis3"], metabolizedBy: ["var1", "var3"] },
+  { id: "drug9", name: "Montelukast", description: "Leukotriene modifier for asthma", relatedDiseases: ["dis4"] },
+  { id: "drug10", name: "Levetiracetam", description: "Anticonvulsant for epilepsy", relatedDiseases: ["dis5"] },
+  { id: "drug11", name: "Atorvastatin", description: "Cholesterol-lowering statin", relatedDiseases: ["dis7"], contraindicatedVariants: ["var10"] },
+  { id: "drug12", name: "Warfarin", description: "Anticoagulant (VKORC1 sensitivity dependent)", relatedDiseases: ["dis7"], contraindicatedVariants: ["var4"] },
+  { id: "drug13", name: "Azathioprine", description: "Immunosuppressant (TPMT deficiency risk)", relatedDiseases: ["dis6"], contraindicatedVariants: ["var9"] },
+  { id: "drug14", name: "Allopurinol", description: "Gout treatment", relatedDiseases: ["dis10"], contraindicatedVariants: ["var5"] },
+  { id: "drug15", name: "Clopidogrel", description: "Antiplatelet drug", relatedDiseases: ["dis7"], metabolizedBy: ["var3"] }
 ];
 
 // Side effects by response type
@@ -113,6 +150,91 @@ const sideEffects = {
   ]
 };
 
+// Drug-gene interaction warnings
+const getWarnings = (patient: Patient, drugId: string): Warning[] => {
+  const warnings: Warning[] = [];
+  const drug = drugs.find(d => d.id === drugId);
+  const variant = variants.find(v => v.id === patient.variantId);
+  
+  if (!drug || !variant) return warnings;
+  
+  // Check for contraindications
+  if (drug.contraindicatedVariants?.includes(variant.id)) {
+    warnings.push({
+      type: "critical",
+      message: `${drug.name} may be contraindicated with ${variant.name}`,
+      explanation: `Patients with ${variant.name} may experience severe adverse reactions to ${drug.name}.`
+    });
+  }
+  
+  // Check for metabolism impact
+  if (drug.metabolizedBy?.includes(variant.id) && variant.metabolismImpact === "poor") {
+    warnings.push({
+      type: "moderate",
+      message: `Reduced ${drug.name} metabolism due to ${variant.name}`,
+      explanation: `Patients with ${variant.name} may metabolize ${drug.name} more slowly, potentially leading to increased drug concentration and side effects.`
+    });
+  }
+  
+  // Check for sensitivity risk
+  if (variant.sensitivityRisk) {
+    if (variant.sensitivityRisk === "statins" && drug.name.includes("statin")) {
+      warnings.push({
+        type: "moderate",
+        message: `Increased myopathy risk with ${drug.name}`,
+        explanation: `Patients with ${variant.name} have increased risk of muscle pain and damage when taking statins.`
+      });
+    } else if (variant.sensitivityRisk === "warfarin" && drug.name === "Warfarin") {
+      warnings.push({
+        type: "moderate",
+        message: `Increased warfarin sensitivity`,
+        explanation: `Patients with ${variant.name} may require lower warfarin doses to avoid bleeding complications.`
+      });
+    } else if (variant.sensitivityRisk === "thiopurines" && drug.name === "Azathioprine") {
+      warnings.push({
+        type: "critical",
+        message: `High risk of thiopurine toxicity`,
+        explanation: `Patients with ${variant.name} have reduced ability to metabolize thiopurines, leading to potentially severe bone marrow suppression.`
+      });
+    }
+  }
+  
+  return warnings;
+};
+
+// Get dosage recommendations based on variant and drug
+const getDosageRecommendation = (patient: Patient, drugId: string, requestedDosage: number): DosageRecommendation | undefined => {
+  const drug = drugs.find(d => d.id === drugId);
+  const variant = variants.find(v => v.id === patient.variantId);
+  
+  if (!drug || !variant) return undefined;
+  
+  let dosageRec: DosageRecommendation = {
+    standard: requestedDosage,
+    recommended: requestedDosage,
+    unit: "mg"
+  };
+  
+  // Poor metabolizers may need lower doses
+  if (variant.metabolismImpact === "poor" && drug.metabolizedBy?.includes(variant.id)) {
+    dosageRec.recommended = requestedDosage * 0.5;
+    dosageRec.adjustmentReason = `Reduced dosage recommended due to ${variant.name} poor metabolizer status`;
+  }
+  
+  // Warfarin sensitivity
+  if (variant.id === "var4" && drug.name === "Warfarin") {
+    dosageRec.recommended = requestedDosage * 0.4;
+    dosageRec.adjustmentReason = `Significant dosage reduction required due to VKORC1 warfarin sensitivity`;
+  }
+  
+  // Only return if there's a change
+  if (dosageRec.recommended !== dosageRec.standard) {
+    return dosageRec;
+  }
+  
+  return undefined;
+};
+
 // Prediction history storage
 let predictionHistory: PredictionResponse[] = [];
 
@@ -123,24 +245,9 @@ const generateId = () => Math.random().toString(36).substring(2, 11);
 const getAlternatives = (diseaseId: string, currentDrugId: string): AlternativeDrug[] => {
   // Filter drugs for the same disease, excluding current drug
   const diseaseRelatedDrugs = drugs
-    .filter(drug => {
-      if (diseaseId === "dis1" && ["drug1", "drug6"].includes(drug.id) && drug.id !== currentDrugId) {
-        return true;
-      }
-      if (diseaseId === "dis2" && ["drug2", "drug7"].includes(drug.id) && drug.id !== currentDrugId) {
-        return true;
-      }
-      if (diseaseId === "dis3" && ["drug3", "drug8"].includes(drug.id) && drug.id !== currentDrugId) {
-        return true;
-      }
-      if (diseaseId === "dis4" && ["drug4", "drug9"].includes(drug.id) && drug.id !== currentDrugId) {
-        return true;
-      }
-      if (diseaseId === "dis5" && ["drug5", "drug10"].includes(drug.id) && drug.id !== currentDrugId) {
-        return true;
-      }
-      return false;
-    })
+    .filter(drug => 
+      drug.relatedDiseases.includes(diseaseId) && drug.id !== currentDrugId
+    )
     .map(drug => ({
       drugId: drug.id,
       drugName: drug.name,
@@ -151,34 +258,70 @@ const getAlternatives = (diseaseId: string, currentDrugId: string): AlternativeD
   return diseaseRelatedDrugs;
 };
 
+// Get contraindications for a drug-variant pair
+const getContraindications = (patient: Patient, drugId: string): string[] => {
+  const contraindications: string[] = [];
+  const drug = drugs.find(d => d.id === drugId);
+  const variant = variants.find(v => v.id === patient.variantId);
+  
+  if (!drug || !variant) return contraindications;
+  
+  if (drug.contraindicatedVariants?.includes(variant.id)) {
+    contraindications.push(`${drug.name} is contraindicated with the ${variant.name} variant.`);
+  }
+  
+  return contraindications;
+};
+
 // Simulate an AI prediction
 export const predictDrugResponse = (request: PredictionRequest): PredictionResponse => {
   // Generate deterministic but "random-seeming" response based on inputs
-  const responseTypeIndex = (
-    variants.findIndex(v => v.id === request.patient.variantId) +
-    diseases.findIndex(d => d.id === request.patient.diseaseId) +
-    drugs.findIndex(d => d.id === request.drugId) +
-    request.patient.age
-  ) % 3;
-  
-  const responseTypes: ResponseType[] = ["positive", "negative", "neutral"];
-  const response: ResponseType = responseTypes[responseTypeIndex];
-  
-  // Find drug and disease objects
+  const variant = variants.find(v => v.id === request.patient.variantId);
   const drug = drugs.find(d => d.id === request.drugId);
   const disease = diseases.find(d => d.id === request.patient.diseaseId);
   
-  if (!drug || !disease) {
-    throw new Error("Invalid drug or disease ID");
+  if (!variant || !drug || !disease) {
+    throw new Error("Invalid variant, drug, or disease ID");
   }
   
-  // Calculate confidence based on dosage - just for simulation
-  let confidence = Math.floor(Math.random() * 20) + 80; // 80-99
-  if (response === "negative") {
-    confidence = Math.floor(Math.random() * 15) + 85; // Higher confidence for negative responses
-  } else if (response === "neutral") {
-    confidence = Math.floor(Math.random() * 30) + 60; // Lower confidence for neutral responses
+  // Check if drug is related to the disease
+  const isDrugRelatedToDisease = drug.relatedDiseases.includes(disease.id);
+  
+  // Check for contraindications
+  const hasContraindication = drug.contraindicatedVariants?.includes(variant.id);
+  
+  // Determine response type based on multiple factors
+  let response: ResponseType;
+  if (hasContraindication) {
+    response = "negative";
+  } else if (!isDrugRelatedToDisease) {
+    response = "neutral";
+  } else {
+    // For drugs that are related to the disease and not contraindicated:
+    // If the patient has a poor metabolizer variant that affects the drug, response is less likely to be positive
+    const isPoorMetabolizer = variant.metabolismImpact === "poor" && drug.metabolizedBy?.includes(variant.id);
+    
+    // Generate a weighted random response
+    const responseIndex = isPoorMetabolizer
+      ? Math.floor(Math.random() * 10) // 0-9
+      : Math.floor(Math.random() * 10) + 5; // 5-14
+      
+    if (responseIndex < 3) response = "negative";
+    else if (responseIndex < 7) response = "neutral";
+    else response = "positive";
   }
+  
+  // Calculate confidence based on various factors
+  let confidence = 80;
+  if (hasContraindication) {
+    confidence = 95; // High confidence for contraindicated drugs
+  } else if (!isDrugRelatedToDisease) {
+    confidence = 70; // Lower confidence for unrelated drugs
+  } else if (variant.metabolismImpact === "poor" && drug.metabolizedBy?.includes(variant.id)) {
+    confidence = response === "positive" ? 65 : 85; // Lower confidence for positive outcomes with poor metabolizers
+  }
+  confidence += Math.floor(Math.random() * 10); // Add a small random factor
+  confidence = Math.min(confidence, 99); // Cap at 99%
   
   // Generate random side effects
   const numSideEffects = Math.floor(Math.random() * 3) + 1;
@@ -186,12 +329,25 @@ export const predictDrugResponse = (request: PredictionRequest): PredictionRespo
     .sort(() => 0.5 - Math.random())
     .slice(0, numSideEffects);
   
+  // Get warnings, dosage recommendations, and contraindications
+  const warnings = getWarnings(request.patient, request.drugId);
+  const dosageRecommendation = getDosageRecommendation(request.patient, request.drugId, request.dosage);
+  const contraindications = getContraindications(request.patient, request.drugId);
+  
+  // Generate metabolism impact info
+  let metabolismImpact = "";
+  if (variant.metabolismImpact === "poor" && drug.metabolizedBy?.includes(variant.id)) {
+    metabolismImpact = `${variant.name} causes reduced metabolism of ${drug.name}, potentially increasing drug concentration in the bloodstream.`;
+  } else if (variant.metabolismImpact === "intermediate" && drug.metabolizedBy?.includes(variant.id)) {
+    metabolismImpact = `${variant.name} may cause slightly reduced metabolism of ${drug.name}.`;
+  }
+  
   // Generate response details
   let details = "";
   if (response === "positive") {
-    details = `Patient with ${disease.name} is predicted to respond well to ${drug.name}. Therapeutic effect is expected within standard timeframe with minimal side effects.`;
+    details = `Patient with ${disease.name} is predicted to respond well to ${drug.name}. Therapeutic effect is expected within standard timeframe${dosageRecommendation ? " with adjusted dosing" : ""}.`;
   } else if (response === "negative") {
-    details = `Patient with ${disease.name} is predicted to have an adverse reaction to ${drug.name}. Consider alternative treatments or close monitoring.`;
+    details = `Patient with ${disease.name} is predicted to have an adverse reaction to ${drug.name}. Consider alternative treatments${contraindications.length > 0 ? " due to genetic contraindications" : ""}.`;
   } else {
     details = `Patient with ${disease.name} is predicted to have limited response to ${drug.name}. May require dosage adjustment or alternative therapy.`;
   }
@@ -211,6 +367,10 @@ export const predictDrugResponse = (request: PredictionRequest): PredictionRespo
     alternatives: getAlternatives(disease.id, drug.id),
     timestamp: request.timestamp || new Date(),
     details,
+    warnings,
+    dosageRecommendation,
+    metabolismImpact,
+    contraindications
   };
   
   // Add to history

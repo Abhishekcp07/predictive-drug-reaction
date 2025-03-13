@@ -1,10 +1,11 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import PatientForm from '@/components/PatientForm';
 import { PredictionRequest, predictDrugResponse, PredictionResponse } from '@/utils/mockData';
 import { motion } from 'framer-motion';
-import { Dna, FlaskConical, Brain } from 'lucide-react';
+import { Dna, FlaskConical, Brain, Pill, AlertCircle, Stethoscope } from 'lucide-react';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -43,13 +44,14 @@ const Index = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary/10 text-primary mb-4"
           >
-            AI-Powered Drug Response Prediction
+            <Stethoscope className="h-4 w-4 mr-1" />
+            Medical Decision Support Tool
           </motion.div>
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl mb-4">
-            Predict Medication Responses
+            Pharmacogenetic Prediction System
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Personalized medicine powered by genomic data analysis for better patient outcomes.
+            Predict medication responses based on genetic variants, medical conditions, and drug interactions.
           </p>
         </div>
 
@@ -58,17 +60,32 @@ const Index = () => {
             {
               icon: Dna,
               title: "Genomic Analysis",
-              description: "Uses genetic markers to predict how a patient will respond to medications."
+              description: "Analyzes genetic variants to determine how a patient will metabolize medications."
             },
             {
               icon: FlaskConical,
               title: "Personalized Medicine",
-              description: "Tailored recommendations based on individual patient characteristics."
+              description: "Provides tailored medication and dosage recommendations based on patient's unique profile."
+            },
+            {
+              icon: Pill,
+              title: "Drug Interaction Alerts",
+              description: "Identifies potential contraindications and drug-gene interactions that may impact safety."
+            },
+            {
+              icon: AlertCircle,
+              title: "Risk Assessment",
+              description: "Highlights potential adverse reactions and sensitivity based on genetic markers."
             },
             {
               icon: Brain,
               title: "AI-Powered Predictions",
-              description: "Advanced algorithms to provide accurate response predictions."
+              description: "Employs advanced algorithms to provide accurate response predictions."
+            },
+            {
+              icon: Stethoscope,
+              title: "Clinical Decision Support",
+              description: "Assists healthcare professionals with evidence-based medication decisions."
             }
           ].map((feature, index) => (
             <motion.div
@@ -87,12 +104,45 @@ const Index = () => {
           ))}
         </div>
 
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.6 }}
+          className="bg-primary/5 p-6 rounded-xl mb-12"
+        >
+          <h2 className="text-2xl font-semibold mb-4">How It Works</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="flex flex-col items-center text-center">
+              <div className="bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center mb-3">
+                <span className="text-primary font-bold">1</span>
+              </div>
+              <h3 className="font-medium mb-2">Enter Patient Data</h3>
+              <p className="text-sm text-muted-foreground">Input patient details, genetic variant information, and disease diagnosis.</p>
+            </div>
+            <div className="flex flex-col items-center text-center">
+              <div className="bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center mb-3">
+                <span className="text-primary font-bold">2</span>
+              </div>
+              <h3 className="font-medium mb-2">Select Medication</h3>
+              <p className="text-sm text-muted-foreground">Choose a medication and dosage for the patient's condition.</p>
+            </div>
+            <div className="flex flex-col items-center text-center">
+              <div className="bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center mb-3">
+                <span className="text-primary font-bold">3</span>
+              </div>
+              <h3 className="font-medium mb-2">Get Predictions</h3>
+              <p className="text-sm text-muted-foreground">Receive detailed predictions on medication response, dosage adjustments, and potential interactions.</p>
+            </div>
+          </div>
+        </motion.div>
+
         <div className="relative">
           {isLoading && (
             <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10 rounded-2xl">
               <div className="flex flex-col items-center">
                 <div className="w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
                 <p className="mt-4 text-lg font-medium">Analyzing patient data...</p>
+                <p className="text-sm text-muted-foreground mt-2">Processing genetic markers and medication interactions</p>
               </div>
             </div>
           )}

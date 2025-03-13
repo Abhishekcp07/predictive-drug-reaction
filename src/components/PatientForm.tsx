@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
@@ -8,6 +9,7 @@ import {
 import { cn } from '@/lib/utils';
 import { variants, diseases, drugs, Patient, PredictionRequest } from '@/utils/mockData';
 import { useToast } from '@/hooks/use-toast';
+import DrugGeneWarning from './DrugGeneWarning';
 
 type Step = 'patient' | 'variant' | 'disease' | 'drug';
 
@@ -36,8 +38,26 @@ const PatientForm = ({ onSubmit }: PatientFormProps) => {
     drugId: '',
     dosage: '',
   });
+  const [filteredDrugs, setFilteredDrugs] = useState(drugs);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Filter drugs when disease changes
+  useEffect(() => {
+    if (formData.diseaseId) {
+      const relatedDrugs = drugs.filter(drug => 
+        drug.relatedDiseases.includes(formData.diseaseId)
+      );
+      setFilteredDrugs(relatedDrugs);
+      
+      // Clear drug selection if it's not in the filtered list
+      if (formData.drugId && !relatedDrugs.some(d => d.id === formData.drugId)) {
+        setFormData(prev => ({ ...prev, drugId: '' }));
+      }
+    } else {
+      setFilteredDrugs(drugs);
+    }
+  }, [formData.diseaseId]);
 
   const updateFormData = (field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -244,6 +264,23 @@ const PatientForm = ({ onSubmit }: PatientFormProps) => {
                   >
                     <h3 className="font-medium text-lg">{variant.name}</h3>
                     <p className="text-muted-foreground text-sm mt-1">{variant.description}</p>
+                    {variant.metabolismImpact && (
+                      <span className={cn(
+                        "inline-block text-xs px-2 py-0.5 rounded-full mt-2",
+                        {
+                          "bg-success/20 text-success": variant.metabolismImpact === "normal",
+                          "bg-warning/20 text-warning": variant.metabolismImpact === "intermediate",
+                          "bg-destructive/20 text-destructive": variant.metabolismImpact === "poor"
+                        }
+                      )}>
+                        {variant.metabolismImpact.charAt(0).toUpperCase() + variant.metabolismImpact.slice(1)} metabolizer
+                      </span>
+                    )}
+                    {variant.sensitivityRisk && (
+                      <span className="inline-block text-xs px-2 py-0.5 rounded-full mt-2 bg-destructive/20 text-destructive ml-2">
+                        Sensitivity risk
+                      </span>
+                    )}
                   </button>
                 </motion.div>
               ))}
@@ -296,10 +333,18 @@ const PatientForm = ({ onSubmit }: PatientFormProps) => {
               <Pill className="mr-2 h-6 w-6 text-primary" />
               Medication Details
             </h2>
+            
+            {formData.variantId && formData.drugId && (
+              <DrugGeneWarning 
+                variantId={formData.variantId} 
+                drugId={formData.drugId} 
+              />
+            )}
+            
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select Medication
+                  Select Medication for {diseases.find(d => d.id === formData.diseaseId)?.name}
                 </label>
                 <motion.div 
                   className="grid grid-cols-1 md:grid-cols-2 gap-4"
@@ -307,7 +352,7 @@ const PatientForm = ({ onSubmit }: PatientFormProps) => {
                   initial="hidden"
                   animate="visible"
                 >
-                  {drugs.map((drug) => (
+                  {filteredDrugs.map((drug) => (
                     <motion.div
                       key={drug.id}
                       variants={itemVariants}
