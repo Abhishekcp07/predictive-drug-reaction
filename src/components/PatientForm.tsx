@@ -1,10 +1,9 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   ChevronRight, ChevronLeft, User, Pill, 
-  Activity, Flask, Dna, Droplets 
+  Activity, FlaskConical, Dna, Droplets 
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { variants, diseases, drugs, Patient, PredictionRequest } from '@/utils/mockData';
@@ -96,7 +95,6 @@ const PatientForm = ({ onSubmit }: PatientFormProps) => {
   };
 
   const handleSubmit = () => {
-    // Validate form data
     if (
       !formData.name || 
       !formData.age || 
@@ -114,7 +112,6 @@ const PatientForm = ({ onSubmit }: PatientFormProps) => {
       return;
     }
 
-    // Create patient object
     const patient: Patient = {
       name: formData.name,
       age: parseInt(formData.age),
@@ -123,7 +120,6 @@ const PatientForm = ({ onSubmit }: PatientFormProps) => {
       diseaseId: formData.diseaseId,
     };
 
-    // Create prediction request
     const request: PredictionRequest = {
       patient,
       drugId: formData.drugId,
@@ -134,7 +130,6 @@ const PatientForm = ({ onSubmit }: PatientFormProps) => {
     onSubmit(request);
   };
 
-  // Variants animation
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -153,7 +148,6 @@ const PatientForm = ({ onSubmit }: PatientFormProps) => {
     },
   };
 
-  // Render different form sections based on current step
   const renderStepContent = () => {
     switch (step) {
       case 'patient':
@@ -359,7 +353,6 @@ const PatientForm = ({ onSubmit }: PatientFormProps) => {
     }
   };
 
-  // Progress indicator
   const steps: Step[] = ['patient', 'variant', 'disease', 'drug'];
   const progress = ((steps.indexOf(step) + 1) / steps.length) * 100;
 

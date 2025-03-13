@@ -1,11 +1,10 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import PatientForm from '@/components/PatientForm';
 import { PredictionRequest, predictDrugResponse, PredictionResponse } from '@/utils/mockData';
 import { motion } from 'framer-motion';
-import { Dna, Flask, Brain } from 'lucide-react';
+import { Dna, FlaskConical, Brain } from 'lucide-react';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -62,7 +61,7 @@ const Index = () => {
               description: "Uses genetic markers to predict how a patient will respond to medications."
             },
             {
-              icon: Flask,
+              icon: FlaskConical,
               title: "Personalized Medicine",
               description: "Tailored recommendations based on individual patient characteristics."
             },
