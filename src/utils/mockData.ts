@@ -1,4 +1,3 @@
-
 export interface Variant {
   id: string;
   name: string;
@@ -106,7 +105,17 @@ export const diseases: Disease[] = [
   { id: "dis7", name: "Cardiovascular Disease", description: "Increased heart disease risk" },
   { id: "dis8", name: "Schizophrenia", description: "Chronic psychiatric disorder" },
   { id: "dis9", name: "Parkinson's Disease", description: "Neurodegenerative disorder" },
-  { id: "dis10", name: "Gout", description: "Uric acid buildup causing joint inflammation" }
+  { id: "dis10", name: "Gout", description: "Uric acid buildup causing joint inflammation" },
+  { id: "dis11", name: "Hypothyroidism", description: "Underactive thyroid gland" },
+  { id: "dis12", name: "ADHD", description: "Attention deficit hyperactivity disorder" },
+  { id: "dis13", name: "Bipolar Disorder", description: "Mood disorder with episodes of mania and depression" },
+  { id: "dis14", name: "Osteoporosis", description: "Decreased bone density and increased fracture risk" },
+  { id: "dis15", name: "COPD", description: "Chronic obstructive pulmonary disease" },
+  { id: "dis16", name: "Migraine", description: "Recurring severe headaches with neurological symptoms" },
+  { id: "dis17", name: "Fibromyalgia", description: "Widespread pain, fatigue, and cognitive difficulties" },
+  { id: "dis18", name: "Ulcerative Colitis", description: "Inflammatory bowel disease affecting the colon" },
+  { id: "dis19", name: "Psoriasis", description: "Autoimmune skin condition with scaling and inflammation" },
+  { id: "dis20", name: "Chronic Kidney Disease", description: "Progressive loss of kidney function" }
 ];
 
 // Mock drugs
