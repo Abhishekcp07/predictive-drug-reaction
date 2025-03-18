@@ -57,7 +57,8 @@ export function useAIService() {
             toast({
               title: "API Unavailable",
               description: "The AI prediction API is not available. Using mock service instead.",
-              variant: "warning",
+              // Fixed the error by using a valid variant type
+              variant: "destructive",
             });
             return;
           }
