@@ -160,9 +160,9 @@ const getWarnings = (patient: Patient, drugId: string, dosage: number): Warning[
   // Check for high dosage risk
   if (dosage > 1000) {
     warnings.push({
-      type: "moderate",
+      type: "critical",
       message: `High dosage risk with ${drug.name}`,
-      explanation: `Doses above 1000 units are associated with increased risk of adverse effects. Consider monitoring for potential toxicity.`
+      explanation: `Doses above 1000 units are associated with increased risk of adverse effects and toxicity.`
     });
   }
   
@@ -305,9 +305,12 @@ export const predictDrugResponse = (request: PredictionRequest): PredictionRespo
   // Check for contraindications
   const hasContraindication = drug.contraindicatedVariants?.includes(variant.id);
   
+  // High dose is considered a negative factor
+  const isHighDose = request.dosage > 1000;
+  
   // Determine response type based on multiple factors
   let response: ResponseType;
-  if (hasContraindication) {
+  if (hasContraindication || isHighDose) {
     response = "negative";
   } else if (!isDrugRelatedToDisease) {
     response = "neutral";
@@ -328,8 +331,8 @@ export const predictDrugResponse = (request: PredictionRequest): PredictionRespo
   
   // Calculate confidence based on various factors
   let confidence = 80;
-  if (hasContraindication) {
-    confidence = 95; // High confidence for contraindicated drugs
+  if (hasContraindication || isHighDose) {
+    confidence = 95; // High confidence for contraindicated drugs and high doses
   } else if (!isDrugRelatedToDisease) {
     confidence = 70; // Lower confidence for unrelated drugs
   } else if (variant.metabolismImpact === "poor" && drug.metabolizedBy?.includes(variant.id)) {
@@ -361,13 +364,12 @@ export const predictDrugResponse = (request: PredictionRequest): PredictionRespo
   let details = "";
   if (response === "positive") {
     details = `Patient with ${disease.name} is predicted to respond well to ${drug.name}. Therapeutic effect is expected within standard timeframe${dosageRecommendation ? " with adjusted dosing" : ""}.`;
-    
-    // Add high dosage note if applicable
-    if (request.dosage > 1000) {
-      details += ` Note: Prescribed dosage (${request.dosage} mg) exceeds recommended threshold.`;
-    }
   } else if (response === "negative") {
-    details = `Patient with ${disease.name} is predicted to have an adverse reaction to ${drug.name}. Consider alternative treatments${contraindications.length > 0 ? " due to genetic contraindications" : ""}.`;
+    if (isHighDose) {
+      details = `Patient with ${disease.name} is predicted to have an adverse reaction to ${drug.name} due to high dosage (${request.dosage} mg). Consider dosage reduction or alternative treatments.`;
+    } else {
+      details = `Patient with ${disease.name} is predicted to have an adverse reaction to ${drug.name}. Consider alternative treatments${contraindications.length > 0 ? " due to genetic contraindications" : ""}.`;
+    }
   } else {
     details = `Patient with ${disease.name} is predicted to have limited response to ${drug.name}. May require dosage adjustment or alternative therapy.`;
   }
