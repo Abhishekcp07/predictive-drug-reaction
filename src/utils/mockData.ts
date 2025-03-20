@@ -1,4 +1,3 @@
-
 export interface Variant {
   id: string;
   name: string;
@@ -151,12 +150,21 @@ const sideEffects = {
 };
 
 // Drug-gene interaction warnings
-const getWarnings = (patient: Patient, drugId: string): Warning[] => {
+const getWarnings = (patient: Patient, drugId: string, dosage: number): Warning[] => {
   const warnings: Warning[] = [];
   const drug = drugs.find(d => d.id === drugId);
   const variant = variants.find(v => v.id === patient.variantId);
   
   if (!drug || !variant) return warnings;
+  
+  // Check for high dosage risk
+  if (dosage > 1000) {
+    warnings.push({
+      type: "moderate",
+      message: `High dosage risk with ${drug.name}`,
+      explanation: `Doses above 1000 units are associated with increased risk of adverse effects. Consider monitoring for potential toxicity.`
+    });
+  }
   
   // Check for contraindications
   if (drug.contraindicatedVariants?.includes(variant.id)) {
@@ -227,8 +235,15 @@ const getDosageRecommendation = (patient: Patient, drugId: string, requestedDosa
     dosageRec.adjustmentReason = `Significant dosage reduction required due to VKORC1 warfarin sensitivity`;
   }
   
-  // Only return if there's a change
-  if (dosageRec.recommended !== dosageRec.standard) {
+  // Add warning for high dosage (when standard or recommended is above 1000)
+  if (dosageRec.standard > 1000 || dosageRec.recommended > 1000) {
+    dosageRec.adjustmentReason = (dosageRec.adjustmentReason || '') + 
+      (dosageRec.adjustmentReason ? '. ' : '') + 
+      `Caution: High dosage (>1000 ${dosageRec.unit}) may increase risk of adverse effects`;
+  }
+  
+  // Only return if there's a change or high dose warning
+  if (dosageRec.recommended !== dosageRec.standard || dosageRec.standard > 1000 || dosageRec.recommended > 1000) {
     return dosageRec;
   }
   
@@ -329,8 +344,8 @@ export const predictDrugResponse = (request: PredictionRequest): PredictionRespo
     .sort(() => 0.5 - Math.random())
     .slice(0, numSideEffects);
   
-  // Get warnings, dosage recommendations, and contraindications
-  const warnings = getWarnings(request.patient, request.drugId);
+  // Get warnings including high dosage warnings, dosage recommendations, and contraindications
+  const warnings = getWarnings(request.patient, request.drugId, request.dosage);
   const dosageRecommendation = getDosageRecommendation(request.patient, request.drugId, request.dosage);
   const contraindications = getContraindications(request.patient, request.drugId);
   
@@ -346,6 +361,11 @@ export const predictDrugResponse = (request: PredictionRequest): PredictionRespo
   let details = "";
   if (response === "positive") {
     details = `Patient with ${disease.name} is predicted to respond well to ${drug.name}. Therapeutic effect is expected within standard timeframe${dosageRecommendation ? " with adjusted dosing" : ""}.`;
+    
+    // Add high dosage note if applicable
+    if (request.dosage > 1000) {
+      details += ` Note: Prescribed dosage (${request.dosage} mg) exceeds recommended threshold.`;
+    }
   } else if (response === "negative") {
     details = `Patient with ${disease.name} is predicted to have an adverse reaction to ${drug.name}. Consider alternative treatments${contraindications.length > 0 ? " due to genetic contraindications" : ""}.`;
   } else {

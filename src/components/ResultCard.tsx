@@ -57,6 +57,9 @@ const ResultCard = ({ result, expanded = false }: ResultCardProps) => {
     }
   };
 
+  // Check if the dose is risky (above 1000)
+  const isDoseRisky = (dose: number) => dose > 1000;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -129,14 +132,36 @@ const ResultCard = ({ result, expanded = false }: ResultCardProps) => {
                   <div className="mt-2 ml-6 text-sm">
                     <div className="flex justify-between items-center">
                       <span>Standard dose:</span>
-                      <span className="font-medium">{result.dosageRecommendation.standard} {result.dosageRecommendation.unit}</span>
+                      <span className={cn(
+                        "font-medium",
+                        { "text-[#ea384c] font-bold": isDoseRisky(result.dosageRecommendation.standard) }
+                      )}>
+                        {result.dosageRecommendation.standard} {result.dosageRecommendation.unit}
+                        {isDoseRisky(result.dosageRecommendation.standard) && (
+                          <span className="ml-2 text-[10px] bg-[#ea384c] text-white px-1.5 py-0.5 rounded uppercase">High dose</span>
+                        )}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center mt-1">
                       <span>Recommended dose:</span>
-                      <span className="font-medium text-primary">{result.dosageRecommendation.recommended} {result.dosageRecommendation.unit}</span>
+                      <span className={cn(
+                        "font-medium",
+                        { "text-primary": !isDoseRisky(result.dosageRecommendation.recommended) },
+                        { "text-[#F97316] font-bold": isDoseRisky(result.dosageRecommendation.recommended) }
+                      )}>
+                        {result.dosageRecommendation.recommended} {result.dosageRecommendation.unit}
+                        {isDoseRisky(result.dosageRecommendation.recommended) && (
+                          <span className="ml-2 text-[10px] bg-[#F97316] text-white px-1.5 py-0.5 rounded uppercase">High dose</span>
+                        )}
+                      </span>
                     </div>
                     {result.dosageRecommendation.adjustmentReason && (
                       <p className="mt-2 text-xs text-muted-foreground">{result.dosageRecommendation.adjustmentReason}</p>
+                    )}
+                    {(isDoseRisky(result.dosageRecommendation.standard) || isDoseRisky(result.dosageRecommendation.recommended)) && (
+                      <div className="mt-2 p-2 bg-destructive/10 rounded-md text-xs text-destructive">
+                        <strong>Warning:</strong> Doses above 1000 {result.dosageRecommendation.unit} may carry increased risk of adverse effects.
+                      </div>
                     )}
                   </div>
                 </div>
