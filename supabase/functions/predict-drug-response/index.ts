@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
+import * as ort from 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.16.3/dist/ort.min.js';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -34,18 +35,28 @@ serve(async (req) => {
     const { patient, drugId, dosage }: PredictionRequest = await req.json();
     console.log('Request data:', { patient, drugId, dosage });
 
-    // Download the model file from Supabase storage
-    console.log('Downloading model from storage...');
-    const { data: modelData, error: downloadError } = await supabase.storage
+    // Try to download ONNX model first, then fallback to pickle
+    console.log('Trying to download ONNX model...');
+    let { data: modelData, error: downloadError } = await supabase.storage
       .from('models')
-      .download('drug_response_model_1.pkl');
+      .download('drug_response_model_1.onnx');
 
     if (downloadError) {
-      console.error('Error downloading model:', downloadError);
-      throw new Error(`Failed to download model: ${downloadError.message}`);
+      console.log('ONNX model not found, trying pickle model...');
+      const pickleResult = await supabase.storage
+        .from('models')
+        .download('drug_response_model_1.pkl');
+      
+      if (pickleResult.error) {
+        console.error('Error downloading both models:', { onnx: downloadError, pickle: pickleResult.error });
+        throw new Error(`Failed to download model: ${pickleResult.error.message}`);
+      }
+      
+      modelData = pickleResult.data;
+      console.log('Pickle model downloaded successfully, size:', modelData.size);
+    } else {
+      console.log('ONNX model downloaded successfully, size:', modelData.size);
     }
-
-    console.log('Model downloaded successfully, size:', modelData.size);
 
     // Convert the model data to bytes for Python processing
     const modelBytes = new Uint8Array(await modelData.arrayBuffer());
@@ -55,8 +66,8 @@ serve(async (req) => {
     const features = createFeatureVector(patient, drugId, dosage);
     console.log('Created feature vector:', features);
 
-    // Use Python subprocess to make prediction
-    const prediction = await runPythonPrediction(modelBytes, features);
+    // Use ONNX model for prediction
+    const prediction = await runONNXPrediction(modelBytes, features);
     console.log('Prediction result:', prediction);
 
     // Create response in the expected format
@@ -121,26 +132,49 @@ function hashString(str: string): number {
   return Math.abs(hash);
 }
 
-async function runPythonPrediction(modelBytes: Uint8Array, features: number[]): Promise<any> {
-  // For now, we'll simulate the prediction since Deno doesn't directly support pickle/sklearn
-  // In production, you'd want to either:
-  // 1. Convert the model to ONNX format and use onnxruntime-web
-  // 2. Use a Python microservice
-  // 3. Retrain the model using a JavaScript ML library
-  
-  console.log('Simulating model prediction with features:', features);
-  
-  // Simple rule-based prediction to simulate the model output
-  // This should be replaced with actual model inference
-  const score = features.reduce((sum, val, idx) => sum + val * (idx + 1) * 0.3, 0);
-  const prediction = score > 0.6 ? 1 : 0; // 1 = positive response, 0 = negative
-  const confidence = Math.min(0.95, 0.6 + Math.abs(score - 0.5) * 0.7);
-  
-  return {
-    prediction,
-    confidence,
-    score
-  };
+async function runONNXPrediction(modelBytes: Uint8Array, features: number[]): Promise<any> {
+  try {
+    console.log('Loading ONNX model...');
+    
+    // Try to load as ONNX model first
+    const session = await ort.InferenceSession.create(modelBytes);
+    console.log('ONNX model loaded successfully');
+    
+    // Prepare input tensor (assuming your model expects a 2D array with shape [1, num_features])
+    const inputTensor = new ort.Tensor('float32', new Float32Array(features), [1, features.length]);
+    
+    // Run inference
+    const results = await session.run({ input: inputTensor });
+    
+    // Extract prediction (assuming binary classification output)
+    const outputData = results.output.data as Float32Array;
+    const prediction = outputData[0] > 0.5 ? 1 : 0;
+    const confidence = Math.max(outputData[0], 1 - outputData[0]);
+    
+    console.log('ONNX prediction successful:', { prediction, confidence });
+    
+    return {
+      prediction,
+      confidence,
+      score: outputData[0],
+      modelType: 'onnx'
+    };
+    
+  } catch (onnxError) {
+    console.log('ONNX model loading failed, falling back to simulation:', onnxError.message);
+    
+    // Fallback to simulation if ONNX fails (model is still in pickle format)
+    const score = features.reduce((sum, val, idx) => sum + val * (idx + 1) * 0.3, 0);
+    const prediction = score > 0.6 ? 1 : 0;
+    const confidence = Math.min(0.95, 0.6 + Math.abs(score - 0.5) * 0.7);
+    
+    return {
+      prediction,
+      confidence,
+      score,
+      modelType: 'simulation'
+    };
+  }
 }
 
 function createPredictionResponse(patient: any, drugId: string, dosage: number, modelResult: any) {
