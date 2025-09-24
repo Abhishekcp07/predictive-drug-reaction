@@ -3,30 +3,52 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import PatientForm from '@/components/PatientForm';
-import { PredictionRequest, predictDrugResponse, PredictionResponse } from '@/utils/mockData';
+import { PredictionRequest, PredictionResponse } from '@/utils/mockData';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import { Dna, FlaskConical, Brain, Pill, AlertCircle, Stethoscope } from 'lucide-react';
 
 const Index = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
-  const handleSubmit = (request: PredictionRequest) => {
+  const handleSubmit = async (request: PredictionRequest) => {
     setIsLoading(true);
     
-    // Simulate API call delay
-    setTimeout(() => {
-      // Generate prediction result using mock data
-      const result = predictDrugResponse(request);
+    try {
+      console.log('Making prediction request:', request);
       
-      // Store result in session storage for the results page
-      sessionStorage.setItem('predictionResult', JSON.stringify(result));
+      const { data, error } = await supabase.functions.invoke('predict-drug-response', {
+        body: {
+          patient: request.patient,
+          drugId: request.drugId,
+          dosage: request.dosage
+        }
+      });
+
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw new Error(error.message || 'Failed to get prediction');
+      }
+
+      console.log('Prediction response:', data);
       
-      // Navigate to results page
-      navigate('/results');
+      // Store result in session storage
+      sessionStorage.setItem('predictionResult', JSON.stringify(data));
       
       setIsLoading(false);
-    }, 1500);
+      navigate('/results');
+    } catch (error) {
+      console.error('Prediction error:', error);
+      toast({
+        title: "Prediction Failed",
+        description: error instanceof Error ? error.message : "There was an error processing your request. Please try again.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+    }
   };
 
   return (
