@@ -1,4 +1,1 @@
 project_id = "eszteylvawpsxgpukthr"
-
-[functions.predict-drug-response]
-verify_jwt = false

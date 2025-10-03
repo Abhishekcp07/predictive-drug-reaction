@@ -3,52 +3,30 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import PatientForm from '@/components/PatientForm';
-import { PredictionRequest, PredictionResponse } from '@/utils/mockData';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { PredictionRequest, predictDrugResponse, PredictionResponse } from '@/utils/mockData';
 import { motion } from 'framer-motion';
 import { Dna, FlaskConical, Brain, Pill, AlertCircle, Stethoscope } from 'lucide-react';
 
 const Index = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
-  const handleSubmit = async (request: PredictionRequest) => {
+  const handleSubmit = (request: PredictionRequest) => {
     setIsLoading(true);
     
-    try {
-      console.log('Making prediction request:', request);
+    // Simulate API call delay
+    setTimeout(() => {
+      // Generate prediction result using mock data
+      const result = predictDrugResponse(request);
       
-      const { data, error } = await supabase.functions.invoke('predict-drug-response', {
-        body: {
-          patient: request.patient,
-          drugId: request.drugId,
-          dosage: request.dosage
-        }
-      });
-
-      if (error) {
-        console.error('Supabase function error:', error);
-        throw new Error(error.message || 'Failed to get prediction');
-      }
-
-      console.log('Prediction response:', data);
+      // Store result in session storage for the results page
+      sessionStorage.setItem('predictionResult', JSON.stringify(result));
       
-      // Store result in session storage
-      sessionStorage.setItem('predictionResult', JSON.stringify(data));
-      
-      setIsLoading(false);
+      // Navigate to results page
       navigate('/results');
-    } catch (error) {
-      console.error('Prediction error:', error);
-      toast({
-        title: "Prediction Failed",
-        description: error instanceof Error ? error.message : "There was an error processing your request. Please try again.",
-        variant: "destructive",
-      });
+      
       setIsLoading(false);
-    }
+    }, 1500);
   };
 
   return (
